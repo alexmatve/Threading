@@ -21,7 +21,7 @@ PORT = 9090
 TYPE = socket.AF_INET
 PROTOCOL = socket.SOCK_STREAM
 
-folder = "f_1"
+folder = "f_2"
 directory = os.path.join(os.getcwd(), folder)
 
 
@@ -90,7 +90,9 @@ while True:
 
         if recieved_data != b'':
             recieved_data = pickle.loads(recieved_data)
+
             change_dirs(recieved_data, directory)
+
         time.sleep(15)
     finally:
         print("Closing connection.")
