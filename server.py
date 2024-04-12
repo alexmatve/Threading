@@ -4,6 +4,8 @@ import pickle
 import time
 import threading
 
+#server for new branch
+
 HOST = ""
 PORT = 9090
 
@@ -15,32 +17,31 @@ directory = os.path.join(os.getcwd(), folder)
 
 
 def clientprocessing(sock, addr):
-    try:
-        packageLen = int(sock.recv(1024))
+    fl = False
+    recieved_data = b''
+    while True:
+        if fl:
+            sock.settimeout(2.0)
+            try:
+                pal = sock.recv(1)
+                recieved_data += pal
+            except socket.timeout:
+                break
+        else:
+            pal = sock.recv(1)
+            fl = True
+            if not pal:
+                break
+            recieved_data += pal
 
-        print('получена длина', packageLen)
-        bytesReceive = 0
-        received_data = b''
+    print(f"Получено от {addr}")
+    recieved_data = pickle.loads(recieved_data)
+    msg = check_directory(directory, recieved_data)
+    msg = pickle.dumps(msg)
+    sock.send(msg)
+    print("Запрос отправлен клиенту")
+    # sock.close()  # Закрываем соединение с клиентом
 
-        while bytesReceive < packageLen:
-            chunk = sock.recv(min(packageLen - bytesReceive, 2048))
-            bytesReceive = bytesReceive + len(chunk)
-            received_data += chunk
-            print('gcvb')
-
-
-        #received_data = sock.recv(packageLen)
-        print(f"Получено от {addr}")
-        received_data = pickle.loads(received_data)
-        msg = check_directory(directory, received_data)
-        msg = pickle.dumps(msg)
-
-        sock.send(pickle.dumps(len(msg)))
-        sock.send(msg)
-        print(f"Запрос отправлен клиенту {addr}")
-    except Exception as e:
-        print(f"Error processing client {addr}: {e}")
-        sock.close()
 
 
 def create_directories(folder):
@@ -92,3 +93,5 @@ while True:
 
     except Exception as e:
         print("Error creating thread:", e)
+
+
