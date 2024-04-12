@@ -15,30 +15,33 @@ directory = os.path.join(os.getcwd(), folder)
 
 
 def clientprocessing(sock, addr):
-    recieved_data = b''
-    fl = False
-    while True:
-        if fl:
-            sock.settimeout(2.0)
-            try:
+    try:
+        recieved_data = b''
+        fl = False
+        while True:
+            if fl:
+                sock.settimeout(2.0)
+                try:
+                    pal = sock.recv(1)
+                    recieved_data += pal
+                except socket.timeout:
+                    break
+            else:
                 pal = sock.recv(1)
+                fl = True
+                if not pal:
+                    break
                 recieved_data += pal
-            except socket.timeout:
-                break
-        else:
-            pal = sock.recv(1)
-            fl = True
-            if not pal:
-                break
-            recieved_data += pal
 
-    print(f"Получено от {addr}")
-    recieved_data = pickle.loads(recieved_data)
-    msg = check_directory(directory, recieved_data)
-    msg = pickle.dumps(msg)
-    sock.send(msg)
-    print(f"Запрос отправлен клиенту {addr}")
-    sock.close()
+        print(f"Получено от {addr}")
+        recieved_data = pickle.loads(recieved_data)
+        msg = check_directory(directory, recieved_data)
+        msg = pickle.dumps(msg)
+        sock.send(msg)
+        print(f"Запрос отправлен клиенту {addr}")
+    except Exception as e:
+        print(f"Error processing client {addr}: {e}")
+        sock.close()
 
 
 def create_directories(folder):
@@ -76,7 +79,7 @@ srv = socket.socket(TYPE, PROTOCOL)
 srv.bind((HOST, PORT))
 
 create_directories(folder)
-srv.listen(4)
+srv.listen(3)
 while True:
     print("Слушаю порт 9090")
     sock, addr = srv.accept()
@@ -87,6 +90,8 @@ while True:
                                   args=(sock, addr))  # Создание нового потока для обработки клиента
         thread.start()  # Запускаем поток для обработки клиента
 
-    except ConnectionResetError:
-        print("Connection closed by client.")
-        sock.close()
+
+    except Exception as e:
+        print("Error creating thread:", e)
+
+

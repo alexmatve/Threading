@@ -77,12 +77,12 @@ while True:
             if fl:
                 sock.settimeout(2.0)
                 try:
-                    data = sock.recv(1)
+                    data = sock.recv(1024)
                     recieved_data += data
                 except socket.timeout:
                     break
             else:
-                data = sock.recv(1)
+                data = sock.recv(1024)
                 fl = True
                 if not data:
                     break
@@ -91,7 +91,9 @@ while True:
         if recieved_data != b'':
             recieved_data = pickle.loads(recieved_data)
             change_dirs(recieved_data, directory)
-        time.sleep(15)
+    except Exception as e:
+        print("Error:", e)
     finally:
         print("Closing connection.")
         sock.close()
+        time.sleep(15)
