@@ -65,32 +65,27 @@ while True:
         sock = socket.socket(TYPE, PROTOCOL)
         sock.connect((SERVER, PORT))
         msg = take_info(directory)
+
         msg = pickle.dumps(msg)
+        sock.send(str(len(msg)).encode())
+
+        print('первое есть')
         sock.send(msg)
 
         print("Состояние директории отправлено серверу")
 
-        recieved_data = b''
-        fl = False
+        packageLen = int(pickle.loads(sock.recv(1024)))
+        bytesReceive = 0
+        received_data = b''
 
-        while True:
-            if fl:
-                sock.settimeout(2.0)
-                try:
-                    data = sock.recv(1024)
-                    recieved_data += data
-                except socket.timeout:
-                    break
-            else:
-                data = sock.recv(1024)
-                fl = True
-                if not data:
-                    break
-                recieved_data += data
+        while bytesReceive < packageLen:
+            chunk = sock.recv(min(packageLen - bytesReceive, 2048))
+            bytesReceive = bytesReceive + len(chunk)
+            received_data += chunk
 
-        if recieved_data != b'':
-            recieved_data = pickle.loads(recieved_data)
-            change_dirs(recieved_data, directory)
+        if received_data != b'':
+            received_data = pickle.loads(received_data)
+            change_dirs(received_data, directory)
     except Exception as e:
         print("Error:", e)
     finally:
